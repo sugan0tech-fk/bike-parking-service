@@ -1,6 +1,7 @@
 class ParkingSlot
   @capacity
   @bikes
+  @max_frequnecies
 
   def initialize capacity
     if !capacity.is_a? Numeric
@@ -39,11 +40,25 @@ class ParkingSlot
     end
   end
 
+  def add_one_bike bike, slot, in_time, out_time
+    begin
+      if !slot.is_a? Numeric
+        raise ArgumentError, "Slot value must be num"
+      elsif(slot < 0 || slot > @capacity)
+        raise ArgumentError, "Invalid slot value #{slots[i]}"
+      end
+      slot = Slot.new slot, in_time, out_time
+      bike = Bike.new bike
+      self.add_bike bike, slot
+    rescue ArgumentError => e
+      puts e.message + "\n skipping it"
+    end
+  end
+
   def get_load
     @bikes
   end
 
-  # bike should be parked after validation ( with time )
   def add_bike bike, slot
     if is_valid_slot slot
       bike.add_slot slot
@@ -78,6 +93,11 @@ class ParkingSlot
     end
     response
   end
+
+  def get_max_frequency
+    @max_frequnecies
+  end
+
 
   private :is_valid_slot
 end
