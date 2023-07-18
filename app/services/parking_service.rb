@@ -19,11 +19,17 @@ class ParkingSlot
   def load_bikes bikes, slots, in_time, out_time
 
     count_check = bikes.length
+
     if (count_check != slots.length) || (count_check != slots.length) || (count_check != in_time.length) || (count_check != out_time.length)
       raise ArgumentError, "Array size mismatch"
     end
     bikes.length.times do |i|
       begin
+        if !slots[i].is_a? Numeric
+          raise ArgumentError, "Slot value must be num"
+        elsif(slots[i] < 0 || slots[i] > @capacity)
+          raise ArgumentError, "Invalid slot value #{slots[i]}"
+        end
         slot = Slot.new slots[i], in_time[i], out_time[i]
         bike = Bike.new bikes[i]
         self.add_bike bike, slot
@@ -31,6 +37,10 @@ class ParkingSlot
         puts e.message + "\n skipping it"
       end
     end
+  end
+
+  def get_load
+    @bikes
   end
 
   # bike should be parked after validation ( with time )

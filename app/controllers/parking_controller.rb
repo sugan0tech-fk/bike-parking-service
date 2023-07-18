@@ -17,7 +17,7 @@ class ParkingController < ApplicationController
     @parking_slot = ParkingSlot.new capacity
     @parking_slot.load_bikes bikes, slots, in_time, out_time
 
-    render json: "<p>Enry </p>"
+    render json: @parking_slot.get_load
   end
 
   def max_frequnecy
