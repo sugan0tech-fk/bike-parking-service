@@ -16,6 +16,8 @@ Rails.application.configure do
 
   # Enable server timing
   config.server_timing = true
+  config.hosts << "7280-103-88-138-8.ngrok-free.app"
+
 
   # Enable/disable caching. By default caching is disabled.
   # Run rails dev:cache to toggle caching.

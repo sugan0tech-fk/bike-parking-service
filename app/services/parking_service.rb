@@ -36,6 +36,7 @@ class ParkingSlot
         self.add_bike bike, slot
       rescue ArgumentError => e
         puts e.message + "\n skipping it"
+        e.message
       end
     end
   end
@@ -45,13 +46,14 @@ class ParkingSlot
       if !slot.is_a? Numeric
         raise ArgumentError, "Slot value must be num"
       elsif(slot < 0 || slot > @capacity)
-        raise ArgumentError, "Invalid slot value #{slots[i]}"
+        raise ArgumentError, "Invalid slot value #{slot}"
       end
       slot = Slot.new slot, in_time, out_time
       bike = Bike.new bike
       self.add_bike bike, slot
     rescue ArgumentError => e
       puts e.message + "\n skipping it"
+      e.message
     end
   end
 

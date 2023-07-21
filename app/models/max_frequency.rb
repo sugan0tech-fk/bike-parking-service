@@ -1,0 +1,2 @@
+class MaxFrequency < ApplicationRecord
+end

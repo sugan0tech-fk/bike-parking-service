@@ -36,8 +36,8 @@ class ParkingController < ApplicationController
     in_time = params[:in_time]
     out_time = params[:out_time]
 
-    $parking_slot.add_one_bike bike, slot, in_time, out_time
-
+    data = $parking_slot.add_one_bike bike, slot, in_time, out_time
+    render json: data
   end
 
   def max_frequnecy
@@ -66,5 +66,6 @@ class ParkingController < ApplicationController
 
   def set_lock
     $lock = !$lock
+    render json: $lock
   end
 end
