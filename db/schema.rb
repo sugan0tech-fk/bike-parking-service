@@ -10,20 +10,13 @@
 #
 # It's strongly recommended that you check this file into your version control system.
 
-ActiveRecord::Schema[7.0].define(version: 2023_07_20_135827) do
-  create_table "max_frequencies", force: :cascade do |t|
-    t.string "bike_one"
-    t.string "bike_two"
-    t.integer "count"
+ActiveRecord::Schema[7.0].define(version: 2023_08_11_161209) do
+  create_table "users", charset: "utf8mb4", collation: "utf8mb4_unicode_ci", force: :cascade do |t|
+    t.string "name"
+    t.string "password"
     t.datetime "created_at", null: false
     t.datetime "updated_at", null: false
-  end
-
-  create_table "samps", force: :cascade do |t|
-    t.string "title"
-    t.integer "value"
-    t.datetime "created_at", null: false
-    t.datetime "updated_at", null: false
+    t.integer "age"
   end
 
 end
