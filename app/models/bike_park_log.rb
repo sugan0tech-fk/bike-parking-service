@@ -1,0 +1,2 @@
+class BikeParkLog < ApplicationRecord
+end
