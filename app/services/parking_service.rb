@@ -17,6 +17,16 @@ class ParkingSlot
     @bikes = Array.new
   end
 
+  def insert_db bike, slot
+    if self.add_bike bike, slot
+      # if BikeParkLog.where("slot_no = ? AND ((in_time, out_time) OVERLAPS (?, ?))", slot.id, slot.in_time,slot.out_time).exists? // for postgress
+      if !BikeParkLog.where("slot_no = ? AND ((in_time <= ? AND out_time >= ?) OR (out_time >= ? AND in_time <= ?))",slot.id, slot.out_time, slot.in_time, slot.in_time, slot.out_time).exists?
+        Rails.logger.info "inside--------"
+        BikeParkLog.create bike: bike.id, slot_no: slot.id, in_time: slot.in_time, out_time: slot.out_time
+      end
+    end
+  end
+
   def load_bikes bikes, slots, in_time, out_time
 
     count_check = bikes.length
@@ -24,6 +34,8 @@ class ParkingSlot
     if (count_check != slots.length) || (count_check != slots.length) || (count_check != in_time.length) || (count_check != out_time.length)
       raise ArgumentError, "Array size mismatch"
     end
+
+    # validators
     bikes.length.times do |i|
       begin
         if !slots[i].is_a? Numeric
@@ -33,7 +45,7 @@ class ParkingSlot
         end
         slot = Slot.new slots[i], in_time[i], out_time[i]
         bike = Bike.new bikes[i]
-        self.add_bike bike, slot
+        insert_db bike, slot
       rescue ArgumentError => e
         puts e.message + "\n skipping it"
         e.message
@@ -51,6 +63,7 @@ class ParkingSlot
       slot = Slot.new slot, in_time, out_time
       bike = Bike.new bike
       self.add_bike bike, slot
+      insert_db bike, slot
     rescue ArgumentError => e
       puts e.message + "\n skipping it"
       e.message
