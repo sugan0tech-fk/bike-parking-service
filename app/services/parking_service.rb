@@ -12,11 +12,12 @@ class ParkingSlot
 
     @capacity = capacity
     @bikes = []
+    @bike_pairs = {}
   end
 
   def insert_db(bike, slot)
-    # iif BikeParkLog.where("slot_no = ? AND ((in_time, out_time) OVERLAPS (?, ?))", slot.id, slot.in_time,slot.out_time).exists?
-    # foor postgress
+    # if BikeParkLog.where("slot_no = ? AND ((in_time, out_time) OVERLAPS (?, ?))", slot.id, slot.in_time,slot.out_time).exists?
+    # for postgress
     unless BikeParkLog.where('slot_no = ? AND ((in_time <= ? AND out_time >= ?) OR (out_time >= ? AND in_time <= ?))',
                              slot.id, slot.out_time, slot.in_time, slot.in_time, slot.out_time).exists?
       Rails.logger.info 'inside--------'
@@ -100,27 +101,37 @@ class ParkingSlot
   end
 
   def get_max_time
-    bike_pairs = []
+    bike_pairs = {}
     parking_data = BikeParkLog.order(:slot_no, :in_time)
 
     grouped_data = parking_data.group_by { |bike| bike.slot_no }
 
+    puts grouped_data
     grouped_data.each do |_slot_no, bikes_in_slot|
-      bikes_in_slot.each_cons(2) do |bike1, bike2|
-        next unless adjacent_slots?(bike1.slot_no, bike2.slot_no, total_slots: 8)
+      bikes_in_slot.each do |bike|
+        puts 'capacity' + @capacity.to_s
+        pair_slots = [bike.slot_no + 1, bike.slot_no + @capacity / 2] # skipping slot_no - 1 bike since moving from slot 1 ASC
 
-        overlapping_time = [0, [bike1.out_time, bike2.out_time].min - [bike1.in_time, bike2.in_time].max].max
-        bike_pairs << { pair: [bike1.bike, bike2.bike], overlapping_time: overlapping_time }
+        pair_slots.each do |pair_slot|
+          next unless grouped_data[pair_slot]
+
+          grouped_data[pair_slot].each do |adj_bike|
+            pair_key = [bike.bike, adj_bike.bike].sort
+            overlapping_time = [0, [bike.out_time, adj_bike.out_time].min - [bike.in_time, adj_bike.in_time].max].max
+            if overlapping_time.zero?
+              next
+            elsif bike_pairs[pair_key].nil?
+              bike_pairs[pair_key] = { overlapping_time: overlapping_time, occurrences: 1 }
+            else
+              bike_pairs[pair_key][:overlapping_time] += overlapping_time
+              bike_pairs[pair_key][:occurrences] += 1
+            end
+          end
+        end
       end
     end
 
-    bike_pairs.sort_by { |pair_info| -pair_info[:overlapping_time] }
     bike_pairs
-  end
-
-  def adjacent_slots?(slot_id1, slot_id2, total_slots:)
-    adjacent_slot_ids = [slot_id1 - 1, slot_id1 + 1, slot_id1 + total_slots / 2]
-    adjacent_slot_ids.include?(slot_id2)
   end
 
   private :is_valid_slot
