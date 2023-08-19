@@ -1,0 +1,28 @@
+version: '1.0'
+
+services:
+  web:
+    image: rails:latest
+    container_name: bike-parking-service
+    build:
+      context: .
+      dockerfile: ./Dockerfile
+    volumes:
+      - .:/app
+    ports:
+      - '3000:3000'
+    environment:
+      DATABASE_URL: mysql2://root:1234@db/samp
+
+  # MariaDB database
+  db:
+    image: mariadb:latest
+    container_name: mydb
+    environment:
+      MYSQL_ROOT_PASSWORD: 1234
+      MYSQL_DATABASE: samp
+    volumes:
+      - db_data:/var/lib/mysql
+
+volumes:
+  db_data: {}
