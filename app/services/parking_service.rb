@@ -1,68 +1,46 @@
 class ParkingSlot
-  @capacity
-  @bikes
-  @max_frequnecies
-
-  def initialize capacity
+  def initialize(capacity)
     if !capacity.is_a? Numeric
       raise ArgumentError, "#{capacity} is not valid capacity"
     elsif capacity <= 0
-      raise ArgumentError, "invalid capacity must be greater than 0"
+      raise ArgumentError, 'invalid capacity must be greater than 0'
     elsif capacity > 1000
-      raise ArgumentError, "capacity must be less than or equal to 1000"
-    elsif  capacity%2 != 0
-      raise ArgumentError, "invalid capacity must be even number"
+      raise ArgumentError, 'capacity must be less than or equal to 1000'
+    elsif capacity.odd?
+      raise ArgumentError, 'invalid capacity must be even number'
     end
+
     @capacity = capacity
-    @bikes = Array.new
+    @bikes = []
   end
 
-  def insert_db bike, slot
-    if self.add_bike bike, slot
-      # if BikeParkLog.where("slot_no = ? AND ((in_time, out_time) OVERLAPS (?, ?))", slot.id, slot.in_time,slot.out_time).exists? // for postgress
-      if !BikeParkLog.where("slot_no = ? AND ((in_time <= ? AND out_time >= ?) OR (out_time >= ? AND in_time <= ?))",slot.id, slot.out_time, slot.in_time, slot.in_time, slot.out_time).exists?
-        Rails.logger.info "inside--------"
-        BikeParkLog.create bike: bike.id, slot_no: slot.id, in_time: slot.in_time, out_time: slot.out_time
-      end
+  def insert_db(bike, slot)
+    # iif BikeParkLog.where("slot_no = ? AND ((in_time, out_time) OVERLAPS (?, ?))", slot.id, slot.in_time,slot.out_time).exists?
+    # foor postgress
+    unless BikeParkLog.where('slot_no = ? AND ((in_time <= ? AND out_time >= ?) OR (out_time >= ? AND in_time <= ?))',
+                             slot.id, slot.out_time, slot.in_time, slot.in_time, slot.out_time).exists?
+      Rails.logger.info 'inside--------'
+      BikeParkLog.create bike: bike.id, slot_no: slot.id, in_time: slot.in_time, out_time: slot.out_time
     end
   end
 
-  def load_bikes bikes, slots, in_time, out_time
-
+  def load_bikes(bikes, slots, in_time, out_time)
     count_check = bikes.length
 
     if (count_check != slots.length) || (count_check != slots.length) || (count_check != in_time.length) || (count_check != out_time.length)
-      raise ArgumentError, "Array size mismatch"
+      raise ArgumentError, 'Array size mismatch'
     end
 
     # validators
     bikes.length.times do |i|
-      begin
-        if !slots[i].is_a? Numeric
-          raise ArgumentError, "Slot value must be num"
-        elsif(slots[i] < 0 || slots[i] > @capacity)
-          raise ArgumentError, "Invalid slot value #{slots[i]}"
-        end
-        slot = Slot.new slots[i], in_time[i], out_time[i]
-        bike = Bike.new bikes[i]
-        insert_db bike, slot
-      rescue ArgumentError => e
-        puts e.message + "\n skipping it"
-        e.message
+      if !slots[i].is_a? Numeric
+        raise ArgumentError, 'Slot value must be num'
+      elsif slots[i] < 0 || slots[i] > @capacity
+        raise ArgumentError, "Invalid slot value #{slots[i]}"
       end
-    end
-  end
 
-  def add_one_bike bike, slot, in_time, out_time
-    begin
-      if !slot.is_a? Numeric
-        raise ArgumentError, "Slot value must be num"
-      elsif(slot < 0 || slot > @capacity)
-        raise ArgumentError, "Invalid slot value #{slot}"
-      end
-      slot = Slot.new slot, in_time, out_time
-      bike = Bike.new bike
-      self.add_bike bike, slot
+      slot = Slot.new slots[i], in_time[i], out_time[i]
+      bike = Bike.new bikes[i]
       insert_db bike, slot
     rescue ArgumentError => e
       puts e.message + "\n skipping it"
@@ -70,41 +48,49 @@ class ParkingSlot
     end
   end
 
+  def add_one_bike(bike, slot, in_time, out_time)
+    if !slot.is_a? Numeric
+      raise ArgumentError, 'Slot value must be num'
+    elsif slot < 0 || slot > @capacity
+      raise ArgumentError, "Invalid slot value #{slot}"
+    end
+
+    slot = Slot.new slot, in_time, out_time
+    bike = Bike.new bike
+    add_bike bike, slot
+    insert_db bike, slot
+  rescue ArgumentError => e
+    puts e.message + "\n skipping it"
+    e.message
+  end
+
   def get_load
     @bikes
   end
 
-  def add_bike bike, slot
-    if is_valid_slot slot
-      bike.add_slot slot
-      @bikes << bike
-    end
-  end
+  def add_bike(bike, slot)
+    return unless is_valid_slot slot
 
+    bike.add_slot slot
+    @bikes << bike
+  end
 
   def show
-    puts "bikes :"
+    puts 'bikes :'
     for bike in @bikes
-      puts bike.to_s
+      puts bike
     end
   end
 
-  def is_valid_slot slot
+  def is_valid_slot(slot)
+    false if slot.id.nil?
 
-    if slot.id == nil
-      false
-    end
-
-    if slot.id > @capacity || slot.id < @capacity
-      false
-    end
+    false if slot.id > @capacity || slot.id < @capacity
 
     response = true
     for bike in @bikes
       curr_slot = bike.slots[slot.id]
-      if curr_slot
-        response = (slot.in_time > curr_slot.out_time || slot.out_time < curr_slot.in_time)  && response
-      end
+      response = (slot.in_time > curr_slot.out_time || slot.out_time < curr_slot.in_time) && response if curr_slot
     end
     response
   end
@@ -113,6 +99,29 @@ class ParkingSlot
     @max_frequnecies
   end
 
+  def get_max_time
+    bike_pairs = []
+    parking_data = BikeParkLog.order(:slot_no, :in_time)
+
+    grouped_data = parking_data.group_by { |bike| bike.slot_no }
+
+    grouped_data.each do |_slot_no, bikes_in_slot|
+      bikes_in_slot.each_cons(2) do |bike1, bike2|
+        next unless adjacent_slots?(bike1.slot_no, bike2.slot_no, total_slots: 8)
+
+        overlapping_time = [0, [bike1.out_time, bike2.out_time].min - [bike1.in_time, bike2.in_time].max].max
+        bike_pairs << { pair: [bike1.bike, bike2.bike], overlapping_time: overlapping_time }
+      end
+    end
+
+    bike_pairs.sort_by { |pair_info| -pair_info[:overlapping_time] }
+    bike_pairs
+  end
+
+  def adjacent_slots?(slot_id1, slot_id2, total_slots:)
+    adjacent_slot_ids = [slot_id1 - 1, slot_id1 + 1, slot_id1 + total_slots / 2]
+    adjacent_slot_ids.include?(slot_id2)
+  end
 
   private :is_valid_slot
 end

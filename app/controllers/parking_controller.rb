@@ -57,11 +57,14 @@ class ParkingController < ApplicationController
       render json: "locked"
       return
     end
-    if $max_frequnecy.nil?
-      render json: "Details haven't be provided"
-    else
-      render json: "<p>max Time</p>"
-    end
+    render json: $parking_slot.get_max_time
+    return
+
+    # if $max_frequnecy.nil?
+    #   render json: "Details haven't be provided"
+    # else
+    #   render json: "<p>max Time</p>"
+    # end
   end
 
   def set_lock
