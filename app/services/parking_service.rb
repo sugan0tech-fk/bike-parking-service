@@ -109,7 +109,6 @@ class ParkingSlot
     puts grouped_data
     grouped_data.each do |_slot_no, bikes_in_slot|
       bikes_in_slot.each do |bike|
-        puts 'capacity' + @capacity.to_s
         pair_slots = [bike.slot_no + 1, bike.slot_no + @capacity / 2] # skipping slot_no - 1 bike since moving from slot 1 ASC
 
         pair_slots.each do |pair_slot|

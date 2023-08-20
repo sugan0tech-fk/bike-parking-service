@@ -1,4 +1,4 @@
-FROM ruby:2.7.5
+FROM ruby:latest
 
 WORKDIR /app
 
@@ -6,13 +6,13 @@ RUN apt-get update && apt-get install -y \
     build-essential \
     nodejs
 
-RUN gem install rails -v '7.0.5'
+RUN gem install rails
 
-COPY Gemfile Gemfile.lock ./
+COPY . .
 
 RUN bundle install
 
-COPY . .
+RUN rails db:migrate RAILS_ENV=development
 
 EXPOSE 3000
 
