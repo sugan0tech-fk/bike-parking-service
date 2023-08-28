@@ -11,7 +11,8 @@ A bike parking statistics generator application, with the given capacity of bike
 ### running the service
 -  Docker
     ```
-    Docker build
+    docker build -t bikeparkingservice:latest . && docker run -p 3000:3000 -it --rm bikeparkingservice:latest
+
     ```
 -  docker compose
   ```

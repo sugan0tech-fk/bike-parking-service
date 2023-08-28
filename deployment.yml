@@ -1,0 +1,19 @@
+apiVersion: apps/v1
+kind: Deployment
+metadata:
+  name: bike-parking-service
+spec:
+  replicas: 1
+  selector:
+    matchLabels:
+      app: bike-parking-service
+  template:
+    metadata:
+      labels:
+        app: bike-parking-service
+    spec:
+      containers:
+        - name: bike-parking-service
+          image: bike-parking-service:latest 
+          ports:
+            - containerPort: 3000
